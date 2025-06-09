@@ -1,13 +1,22 @@
+"""
+Copyright (c) 2025 Piotr Gawron (dev@gawron.biz)
+This file is licensed under the MIT License.
+For details, see the LICENSE file in the project root.
+
+ClipMatch main class.
+"""
+
+import hashlib
 import json
 import os
-import hashlib
+from dataclasses import dataclass
 from itertools import combinations
 from multiprocessing import Pool, cpu_count
-from typing import List, Tuple, Optional
-from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 import cv2
-import numpy as np
+
+from .perceptual_hasher import PerceptualHasher
 
 
 @dataclass
@@ -20,8 +29,8 @@ class VideoHash:
     resolution: Tuple[int, int]
     perceptual_hashes: List[str]
     temporal_hash: str
-    
-    
+
+
 @dataclass
 class SimilarityResult:
     """Data class to store similarity comparison results."""
@@ -33,64 +42,7 @@ class SimilarityResult:
     is_similar: bool
 
 
-class PerceptualHasher:
-    """
-    Perceptual hashing implementation for video frames.
-    Uses DCT-based hashing similar to pHash algorithm.
-    """
-    
-    @staticmethod
-    def dhash(image: np.ndarray, hash_size: int = 8) -> str:
-        """
-        Calculate difference hash (dHash) for an image.
-        
-        :param image: Input image as numpy array
-        :param hash_size: Size of the hash (default 8 for 64-bit hash)
-        :return: Hash as hexadecimal string
-        """
-        resized = cv2.resize(image, (hash_size + 1, hash_size))
-
-        diff = resized[:, 1:] > resized[:, :-1]
-
-        return ''.join(['1' if x else '0' for x in diff.flatten()])
-    
-    @staticmethod
-    def phash(image: np.ndarray, hash_size: int = 8) -> str:
-        """
-        Calculate perceptual hash (pHash) using DCT.
-        
-        :param image: Input image as numpy array
-        :param hash_size: Size of the hash (default 8 for 64-bit hash)
-        :return: Hash as hexadecimal string
-        """
-        img_size = hash_size * 4
-        resized = cv2.resize(image, (img_size, img_size))
-        resized = np.float32(resized)
-        dct = cv2.dct(resized)
-        dct_low = dct[0:hash_size, 0:hash_size]
-        median = np.median(dct_low)
-        diff = dct_low > median
-        return ''.join(['1' if x else '0' for x in diff.flatten()])
-    
-    @staticmethod
-    def hamming_distance(hash1: str, hash2: str) -> int:
-        """Calculate Hamming distance between two binary hash strings."""
-        if len(hash1) != len(hash2):
-            return max(len(hash1), len(hash2))
-        return sum(c1 != c2 for c1, c2 in zip(hash1, hash2))
-    
-    @staticmethod
-    def similarity_score(hash1: str, hash2: str) -> float:
-        """
-        Calculate similarity score between two hashes (0.0 to 1.0).
-        1.0 means identical, 0.0 means completely different.
-        """
-        distance = PerceptualHasher.hamming_distance(hash1, hash2)
-        max_distance = max(len(hash1), len(hash2))
-        return 1.0 - (distance / max_distance) if max_distance > 0 else 1.0
-
-
-class ClipMatch:
+class ClipMatch:  # pylint: disable=too-few-public-methods
     """
     A class for finding similar video clips using perceptual hashing.
 
@@ -151,22 +103,22 @@ class ClipMatch:
         :rtype: List[SimilarityResult]
         """
         self._find_videos(self.directory)
-        
+
         if not self.files:
             print("No video files found.")
             return []
-            
+
         files_count = len(self.files)
 
         print(f'Found {files_count} video files')
         print('Processing video files:')
-        
+
         # Process videos to extract hashes
         if self.n_processes > 1:
             self._process_videos_parallel()
         else:
             self._process_videos_sequential()
-            
+
         print(f'Processed {len(self.video_hashes)} videos successfully')
 
         print('Comparing videos for similarities...')
@@ -174,9 +126,9 @@ class ClipMatch:
 
         similar_videos = [s for s in similarities if s.is_similar]
         similar_videos.sort(key=lambda x: x.similarity_score, reverse=True)
-        
+
         print(f'Found {len(similar_videos)} similar video pairs')
-        
+
         # Output results as JSON
         results_dict = {
             'total_videos': len(self.video_hashes),
@@ -235,13 +187,13 @@ class ClipMatch:
                 video_hash = self._process_video_worker(video_path)
                 if video_hash:
                     self.video_hashes.append(video_hash)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f'Error processing {video_path}: {str(e)}')
 
     def _process_videos_parallel(self):
         """Process videos in parallel using multiprocessing."""
         print(f'Using {self.n_processes} processes for parallel processing')
-        
+
         with Pool(processes=self.n_processes) as pool:
             results = pool.map(self._process_video_worker, self.files)
             self.video_hashes = [result for result in results if result is not None]
@@ -249,7 +201,7 @@ class ClipMatch:
     def _compare_videos(self) -> List[SimilarityResult]:
         """
         Compare all video pairs to find similarities.
-        
+
         :return: List of similarity results for all video pairs
         """
         all_pairs = list(combinations(self.video_hashes, 2))
@@ -284,7 +236,7 @@ class ClipMatch:
     def _compare_video_pair(self, video1: VideoHash, video2: VideoHash) -> SimilarityResult:
         """
         Compare two videos and calculate their similarity.
-        
+
         :param video1: First video hash
         :param video2: Second video hash
         :return: Similarity result
@@ -304,27 +256,27 @@ class ClipMatch:
                 score = PerceptualHasher.similarity_score(hash1, hash2)
                 best_match = max(best_match, score)
                 total_comparisons += 1
-                
+
             similarity_scores.append(best_match)
             if best_match > self.similarity_threshold:
                 frame_matches += 1
-        
+
         # Calculate overall similarity score
         if similarity_scores:
             avg_similarity = sum(similarity_scores) / len(similarity_scores)
         else:
             avg_similarity = 0.0
-            
+
         # Combine temporal and frame similarities
-        overall_similarity = (temporal_similarity * 0.3 + avg_similarity * 0.7)
-        
+        overall_similarity = temporal_similarity * 0.3 + avg_similarity * 0.7
+
         # Determine if videos are similar
         is_similar = (
             overall_similarity > self.similarity_threshold or
             temporal_similarity > self.similarity_threshold or
             (frame_matches / len(video1.perceptual_hashes) > 0.5 if video1.perceptual_hashes else False)
         )
-        
+
         return SimilarityResult(
             file1=video1.file_path,
             file2=video2.file_path,
@@ -399,6 +351,6 @@ class ClipMatch:
                 temporal_hash=temporal_hash
             )
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f'Error processing video {video_path}: {str(e)}')
             return None
