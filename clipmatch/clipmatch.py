@@ -7,7 +7,6 @@ ClipMatch main class.
 """
 
 import hashlib
-import json
 import os
 from dataclasses import dataclass
 from itertools import combinations
@@ -129,26 +128,6 @@ class ClipMatch:  # pylint: disable=too-few-public-methods
 
         print(f'Found {len(similar_videos)} similar video pairs')
 
-        # Output results as JSON
-        results_dict = {
-            'total_videos': len(self.video_hashes),
-            'total_comparisons': len(similarities),
-            'similar_pairs': len(similar_videos),
-            'threshold': self.similarity_threshold,
-            'results': [
-                {
-                    'file1': s.file1,
-                    'file2': s.file2,
-                    'similarity_score': s.similarity_score,
-                    'temporal_similarity': s.temporal_similarity,
-                    'frame_matches': s.frame_matches,
-                    'is_similar': s.is_similar
-                }
-                for s in similar_videos
-            ]
-        }
-        print(json.dumps(results_dict, indent=4))
-
         return similarities
 
     def _find_videos(self, directory: str):
@@ -194,9 +173,15 @@ class ClipMatch:  # pylint: disable=too-few-public-methods
         """Process videos in parallel using multiprocessing."""
         print(f'Using {self.n_processes} processes for parallel processing')
 
+        results = []
+        total = len(self.files)
         with Pool(processes=self.n_processes) as pool:
-            results = pool.map(self._process_video_worker, self.files)
-            self.video_hashes = [result for result in results if result is not None]
+            for i, result in enumerate(pool.imap_unordered(self._process_video_worker, self.files), 1):
+                if result is not None:
+                    results.append(result)
+                    print(f'\rProcessed {i} / {total} files.', end='')
+        print()
+        self.video_hashes = results
 
     def _compare_videos(self) -> List[SimilarityResult]:
         """
@@ -217,12 +202,13 @@ class ClipMatch:  # pylint: disable=too-few-public-methods
 
         print(f'Comparing {len(all_pairs)} pairs using {self.n_processes} processes...')
 
-        with Pool(self.n_processes) as pool:
-            chunk_results = pool.map(self._compare_videos_chunk, pair_chunks)
-
         similarity = []
-        for result_list in chunk_results:
-            similarity.extend(result_list)
+        total = len(pair_chunks) * chunk_size
+        with Pool(self.n_processes) as pool:
+            for i, chunk_result in enumerate(pool.imap_unordered(self._compare_videos_chunk, pair_chunks), 1):
+                similarity.extend(chunk_result)
+                print(f'\rCompared {i * chunk_size} / {total} hashes', end='')
+
         return similarity
 
     def _compare_videos_chunk(self, chunk: List[Tuple[VideoHash, VideoHash]]) -> List[SimilarityResult]:
