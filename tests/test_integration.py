@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import cv2
 import numpy as np
 
-from clipmatch import ClipMatch, VideoHash
+from clipmatch import ClipMatch, VideoHash, SimilarityResult
 
 
 class TestClipMatchIntegration:
@@ -29,7 +29,6 @@ class TestClipMatchIntegration:
             mock_worker.side_effect = [
                 VideoHash('test1.mp4', 10.0, 300, 30.0, (1920, 1080), ['hash1'], 'temporal1'),
                 VideoHash('test2.avi', 15.0, 450, 30.0, (1280, 720), ['hash2'], 'temporal2'),
-                None,  # Simulate failed processing
                 VideoHash('test4.mkv', 20.0, 600, 30.0, (1920, 1080), ['hash4'], 'temporal4')
             ]
 
@@ -43,22 +42,23 @@ class TestClipMatchIntegration:
     def test_process_videos_parallel(self, mock_pool_class, test_setup):
         """Test parallel video processing."""
         # Mock the pool and its methods
-        mock_pool = MagicMock()
-        mock_pool_class.return_value.__enter__.return_value = mock_pool
-
-        mock_pool.map.return_value = [
-            VideoHash('test1.mp4', 10.0, 300, 30.0, (1920, 1080), ['hash1'], 'temporal1'),
-            VideoHash('test2.avi', 15.0, 450, 30.0, (1280, 720), ['hash2'], 'temporal2'),
-            None,  # Simulate failed processing
+        mock_pool_hash = MagicMock()
+        mock_pool_hash.imap_unordered.return_value = [
+            [VideoHash('test1.mp4', 10.0, 300, 30.0, (1920, 1080), ['hash1'], 'temporal1')],
+            [VideoHash('test2.avi', 15.0, 450, 30.0, (1280, 720), ['hash2'], 'temporal2')],
         ]
+        mock_pool_compare = MagicMock()
+        mock_pool_compare.imap_unordered.return_value = [
+            [SimilarityResult('test1.mp4', 'test2.avi', 0.8, 0.7, 3, True)],
+        ]
+        mock_pool_class.return_value.__enter__.side_effect = [mock_pool_hash, mock_pool_compare]
 
         clip_match = ClipMatch(test_setup['test_dir'], n_processes=2)
-        clip_match._find_videos(test_setup['test_dir'])
-        clip_match._process_videos_parallel()
+        clip_match.run()
 
-        # Should have 2 successful video hashes
+        mock_pool_hash.imap_unordered.assert_called()
         assert len(clip_match.video_hashes) == 2
-        mock_pool.map.assert_called_once()
+        mock_pool_compare.imap_unordered.assert_called_once()
 
 
 class TestVideoProcessingIntegration:

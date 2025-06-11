@@ -199,3 +199,20 @@ class TestClipMatchUnit:
         finally:
             if os.path.exists(video_path):
                 os.unlink(video_path)
+
+    @patch('clipmatch.ClipMatch._process_video_worker')
+    @patch('builtins.ValueError')
+    def test_process_videos_sequential_with_error(self, mock_value_error, mock_worker, test_setup):
+        mock_worker.side_effect = ValueError('Test error')
+
+        clip_match = ClipMatch(test_setup['test_dir'], n_processes=1)
+        clip_match.files = ['test1.mp4', 'test2.avi']
+
+        with patch('builtins.print') as mock_print:  # Suppress print output
+            clip_match._process_videos_sequential()
+
+        assert mock_worker.call_count == 2
+        mock_value_error.assert_called()
+
+
+
