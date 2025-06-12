@@ -124,6 +124,15 @@ class TestClipMatchUnit:
         assert result.similarity_score < 0.5
         assert result.is_similar is False
 
+    def test_compare_video_without_hashes(self, test_setup):
+        """Test comparing videos without hashes."""
+        clip_match = ClipMatch(test_setup['test_dir'])
+        clip_match.video_hashes = []
+        result = clip_match._compare_videos()
+
+        assert isinstance(result, list)
+        assert len(result) == 0
+
     def test_compare_videos(self, test_setup):
         """Test comparing multiple videos."""
         clip_match = ClipMatch(test_setup['test_dir'])
@@ -138,6 +147,62 @@ class TestClipMatchUnit:
         # Should have 3 comparisons for 3 videos: (1,2), (1,3), (2,3)
         assert len(results) == 3
         assert all(isinstance(r, SimilarityResult) for r in results)
+
+    def test_compare_videos_chunk_empty_list(self, test_setup):
+        """Test comparing empty chunk list."""
+        chunk = []
+
+        clip_match = ClipMatch(test_setup['test_dir'])
+        results = clip_match._compare_videos_chunk(chunk)
+
+        assert isinstance(results, list)
+        assert len(results) == 0
+
+    @patch('clipmatch.ClipMatch._compare_video_pair')
+    def test_compare_videos_chunk_single_pair(self, mock_compare, test_setup):
+        """Test comparing chunk list with one hash pair."""
+        result_expected = SimilarityResult('video1.mp4', 'video2.avi', 0.9, 0.8, 5, True)
+        mock_compare.return_value = result_expected
+        hash1 = VideoHash('video1.mp4', 10.0, 300, 30.0, (1920, 1080), ['hash1'], 'temporal1')
+        hash2 = VideoHash('video2.avi', 15.0, 450, 30.0, (1280, 720), ['hash2'], 'temporal2')
+        chunk = [(hash1, hash2)]
+
+        clip_match = ClipMatch(test_setup['test_dir'])
+        results = clip_match._compare_videos_chunk(chunk)
+
+        mock_compare.assert_called_once_with(hash1, hash2)
+        assert isinstance(results, list)
+        assert isinstance(results[0], SimilarityResult)
+        assert len(results) == 1
+        assert results[0] == result_expected
+
+    @patch('clipmatch.ClipMatch._compare_video_pair')
+    def test_compare_videos_chunk_multiple_pairs(self, mock_compare, test_setup):
+        """Test comparing chunk list with multiple hash pairs."""
+        result_expected = [
+            SimilarityResult('test1.mp4', 'test2.avi', 0.9, 0.8, 5, True),
+            SimilarityResult('test1.mp4', 'test3.mov', 0.8, 0.7, 4, True),
+            SimilarityResult('test2.avi', 'test3.mov', 0.7, 0.6, 3, True)
+        ]
+        hash1 = VideoHash('test1.mp4', 10.0, 300, 30.0, (1920, 1080), ['hash1'], 'temporal1')
+        hash2 = VideoHash('test2.avi', 15.0, 450, 30.0, (1280, 720), ['hash2'], 'temporal2')
+        hash3 = VideoHash('test3.mov', 20.0, 600, 30.0, (1920, 1080), ['hash3'], 'temporal3')
+        chunk = [
+            (hash1, hash2),
+            (hash1, hash3),
+            (hash2, hash3),
+        ]
+        mock_compare.side_effect = result_expected
+
+        clip_match = ClipMatch(test_setup['test_dir'])
+        results = clip_match._compare_videos_chunk(chunk)
+
+        mock_compare.assert_called()
+        assert isinstance(results, list)
+        assert len(results) == 3
+        for i, res in enumerate(results):
+            assert isinstance(res, SimilarityResult)
+            assert res == result_expected[i]
 
     @patch('clipmatch.ClipMatch._process_videos_sequential')
     @patch('clipmatch.ClipMatch._compare_videos')
@@ -203,6 +268,7 @@ class TestClipMatchUnit:
     @patch('clipmatch.ClipMatch._process_video_worker')
     @patch('builtins.ValueError')
     def test_process_videos_sequential_with_error(self, mock_value_error, mock_worker, test_setup):
+        """Test sequential video processing with an error."""""
         mock_worker.side_effect = ValueError('Test error')
 
         clip_match = ClipMatch(test_setup['test_dir'], n_processes=1)
