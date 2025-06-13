@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clipmatch"
-version = "0.1.0"
+version = "0.1.1.dev"
 description = "Searches for similar video files by comparing hashes of their frames."
 requires-python = ">=3.11"
 authors = [
