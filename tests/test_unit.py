@@ -267,7 +267,7 @@ class TestClipMatchUnit:
 
     @patch('clipmatch.ClipMatch._process_video_worker')
     def test_process_videos_sequential_with_error(self, mock_worker, test_setup):
-        """Test sequential video processing with an error."""""
+        """Test sequential video processing with an error."""
         mock_worker.side_effect = ValueError('Test error')
 
         clip_match = ClipMatch(test_setup['test_dir'], n_processes=1)
