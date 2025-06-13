@@ -25,7 +25,7 @@ def test_setup():
 
     for filename in video_files:
         filepath = os.path.join(test_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             f.write('dummy content')
 
     sub_dir = os.path.join(test_dir, 'subdir')
@@ -34,7 +34,7 @@ def test_setup():
     sub_video_files = ['sub1.mp4', 'sub2.webm']
     for filename in sub_video_files:
         filepath = os.path.join(sub_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             f.write('dummy content')
 
     yield {

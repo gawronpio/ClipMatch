@@ -17,7 +17,7 @@ each other.
 ## Installation
 
 ```bash
-pip install -r git+https://github.com/gawronpio/ClipMatch.git
+pip install git+https://github.com/gawronpio/ClipMatch.git
 ```
 
 ## Usage

@@ -274,11 +274,8 @@ class TestClipMatchUnit:
         clip_match = ClipMatch(test_setup['test_dir'], n_processes=1)
         clip_match.files = ['test1.mp4', 'test2.avi']
 
-        with patch('builtins.print') as mock_print:  # Suppress print output
+        with patch('builtins.print'):  # Suppress print output
             clip_match._process_videos_sequential()
 
         assert mock_worker.call_count == 2
         mock_value_error.assert_called()
-
-
-

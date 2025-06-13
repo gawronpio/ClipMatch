@@ -32,6 +32,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "flake8" },
+    { name = "flake8-pyproject" },
     { name = "isort" },
     { name = "pylint" },
     { name = "pytest" },
@@ -48,6 +49,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "flake8", specifier = ">=7.2.0" },
+    { name = "flake8-pyproject", specifier = ">=1.2.3" },
     { name = "isort", specifier = ">=6.0.1" },
     { name = "pylint", specifier = ">=3.3.7" },
     { name = "pytest", specifier = ">=8.4.0" },
@@ -143,6 +145,17 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e7/c4/5842fc9fc94584c455543540af62fd9900faade32511fab650e9891ec225/flake8-7.2.0.tar.gz", hash = "sha256:fa558ae3f6f7dbf2b4f22663e5343b6b6023620461f8d4ff2019ef4b5ee70426", size = 48177, upload-time = "2025-03-29T20:08:39.329Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/83/5c/0627be4c9976d56b1217cb5187b7504e7fd7d3503f8bfd312a04077bd4f7/flake8-7.2.0-py2.py3-none-any.whl", hash = "sha256:93b92ba5bdb60754a6da14fa3b93a9361fd00a59632ada61fd7b130436c40343", size = 57786, upload-time = "2025-03-29T20:08:37.902Z" },
+]
+
+[[package]]
+name = "flake8-pyproject"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flake8" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/1d/635e86f9f3a96b7ea9e9f19b5efe17a987e765c39ca496e4a893bb999112/flake8_pyproject-1.2.3-py3-none-any.whl", hash = "sha256:6249fe53545205af5e76837644dc80b4c10037e73a0e5db87ff562d75fb5bd4a", size = 4756, upload-time = "2023-03-21T20:51:38.911Z" },
 ]
 
 [[package]]

@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import cv2
 import numpy as np
 
-from clipmatch import ClipMatch, VideoHash, SimilarityResult
+from clipmatch import ClipMatch, SimilarityResult, VideoHash
 
 
 class TestClipMatchIntegration:
