@@ -203,15 +203,22 @@ class ClipMatch:  # pylint: disable=too-few-public-methods
         print(f'Comparing {len(all_pairs)} pairs using {self.n_processes} processes...')
 
         similarity = []
-        total = len(pair_chunks) * chunk_size
+        total = sum(len(chunk) for chunk in pair_chunks)
         with Pool(self.n_processes) as pool:
             for i, chunk_result in enumerate(pool.imap_unordered(self._compare_videos_chunk, pair_chunks), 1):
                 similarity.extend(chunk_result)
-                print(f'\rCompared {i * chunk_size} / {total} hashes', end='')
+                print(f'\rCompared {len(similarity)} / {total} hashes', end='')
 
         return similarity
 
     def _compare_videos_chunk(self, chunk: List[Tuple[VideoHash, VideoHash]]) -> List[SimilarityResult]:
+        """Compare two video pairs and calculate their similarity.
+
+        :param chunk: List of VideoHash pairs
+        :type: List[Tuple[VideoHash, VideoHash]]
+        :return: List of similarity results for the given pairs
+        :rtype: List[SimilarityResult]
+        """
         results = []
         for video1, video2 in chunk:
             similarity = self._compare_video_pair(video1, video2)
