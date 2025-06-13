@@ -149,13 +149,13 @@ class ClipMatch:  # pylint: disable=too-few-public-methods
             for root, _, fs in os.walk(directory, followlinks=True):
                 for file in fs:
                     file = os.path.join(root, file)
-                    if os.path.isfile(file) and os.path.splitext(file)[1] in self.videos_extensions:
+                    if os.path.isfile(file) and os.path.splitext(file)[1].lower() in self.videos_extensions:
                         self.files.append(file)
         else:
             self.files = [
                 os.path.abspath(entry.path)
                 for entry in os.scandir(directory)
-                if entry.is_file() and os.path.splitext(entry.name)[1] in self.videos_extensions
+                if entry.is_file() and os.path.splitext(entry.name)[1].lower() in self.videos_extensions
             ]
 
     def _process_videos_sequential(self):
