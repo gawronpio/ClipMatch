@@ -1,0 +1,115 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clipmatch"
+version = "0.1.0"
+description = "Searches for similar video files by comparing hashes of their frames."
+requires-python = ">=3.11"
+authors = [
+    {name = "Piotr Gawron", email = "gawron.pio@gmail.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["video", "similarity", "hash", "frames", "duplicate", "detection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "numpy>=2.3.0",
+    "opencv-python-headless>=4.11.0.86",
+    "psutil>=7.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "flake8>=7.2.0",
+    "flake8-pyproject>=1.2.3",
+    "isort>=6.0.1",
+    "pylint>=3.3.7",
+    "pytest>=8.4.0",
+    "pytest-cov>=6.1.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/gawronpio/ClipMatch"
+Repository = "https://github.com/gawronpio/ClipMatch.git"
+Issues = "https://github.com/gawronpio/ClipMatch/issues"
+
+[project.scripts]
+clipmatch = "clipmatch.clipmatch:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clipmatch*"]
+
+[tool.setuptools.package-data]
+clipmatch = ["*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--cov=clipmatch --cov-report=term --cov-report=html"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.pylint.main]
+suggestion-mode = true
+py-version = "3.11"
+ignore = [
+    'venv',
+    '.venv',
+    'htmlcov',
+    '__pycache__',
+    'build',
+    'dist',
+]
+
+[tool.pylint.messages_control]
+disable = [
+    'line-too-long',
+    'import-outside-toplevel',
+    'use-dict-literal',
+    'no-name-in-module',
+    'c-extension-no-member',
+    'import-error',
+    'too-many-arguments',
+    'too-many-locals',
+    'too-many-branches',
+    'too-many-instance-attributes',
+]
+
+[tool.flake8]
+ignore = [
+    'E402',  # Module level import not at top of file
+    'E501',  # Line too long (82 > 79 characters)
+    'E722',  # Do not use bare except, specify exception instead
+    'W504',  # Line break occurred after a binary operator
+]
+exclude = [
+    'venv',
+    '.venv',
+    'htmlcov',
+    '__pycache__',
+    'build',
+    'dist',
+]
+count = true
