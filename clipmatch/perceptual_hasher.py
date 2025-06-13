@@ -23,7 +23,7 @@ class PerceptualHasher:
 
         :param image: Input image as numpy array
         :param hash_size: Size of the hash (default 8 for 64-bit hash)
-        :return: Hash as hexadecimal string
+        :return: Hash as binary string
         """
         resized = cv2.resize(image, (hash_size + 1, hash_size))
 
@@ -38,7 +38,7 @@ class PerceptualHasher:
 
         :param image: Input image as numpy array
         :param hash_size: Size of the hash (default 8 for 64-bit hash)
-        :return: Hash as hexadecimal string
+        :return: Hash as binary string
         """
         img_size = hash_size * 4
         resized = cv2.resize(image, (img_size, img_size))
